@@ -207,11 +207,11 @@ invenio:
     #     name: bar
   ## @param invenio.extraSecrets Extra secrets mounted as projected volume by default into `/extra-secrets` or invenio.extraSecretsMountPath
   ##
-  extraSecrets: [] 
+  extraSecrets: []
   # - secret:
-  #     name: anysecretname 
+  #     name: anysecretname
   #     items:
-  #     - key: anykey 
+  #     - key: anykey
   #       path: anypath
   ## @param invenio.extraSecretsMountPath You can change mountpoint for invenio.extraSecrets here. It defaults to `/extra-secrets`
   ##
@@ -1105,8 +1105,8 @@ opensearch:
 ## @extra opensearchExternal.username username for Invenio
 ## @extra opensearchExternal.password Password for the non-root username for Invenio
 ## @extra opensearchExternal.existingSecret Name of an existing secret resource containing the database credentials
-## @extra opensearchExternal.existingSecretPasswordKey Key in the existing secret that contains the database password 
-## @extra opensearchExternal.useSsl (default: False)  
+## @extra opensearchExternal.existingSecretPasswordKey Key in the existing secret that contains the database password
+## @extra opensearchExternal.useSsl (default: False)
 ## @extra opensearchExternal.verifyCerts if True caCerts must be provided (default: False)
 ## @extra opensearchExternal.sslAssertHostname (default: False)
 ## @extra opensearchExternal.sslShowWarn Show SSL warnings if enabled (default: False)
@@ -1116,8 +1116,8 @@ opensearchExternal: {}
   # hostname: ""
   # authEnabled: False
   # username: invenio
-  # password: "" 
-  # existingSecret: 
+  # password: ""
+  # existingSecret: ""
   # existingSecretPasswordKey: ""
   # useSsl: "True"
   # verifyCerts: "False"
