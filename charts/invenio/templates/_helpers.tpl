@@ -87,6 +87,102 @@ Return the proper Invenio image name
   {{- end }}
 {{- end -}}
 
+{{/*
+  This template renders the password for accessing RabbitMQ.
+*/}}
+{{- define "invenio.redis.password" -}}
+  {{- if and .Values.redis.enabled }}
+    {{- required "Missing .Values.redis.auth.password" .Values.redis.auth.password -}}
+  {{- else }}
+    {{- required "Missing .Values.redisExternal.password" .Values.redisExternal.password -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  Get the database password secret name
+*/}}
+{{- define "invenio.redis.secretName" -}}
+  {{- if .Values.redis.enabled -}}
+    {{- required "Missing .Values.redis.auth.existingSecret" (tpl .Values.redis.auth.existingSecret .) -}}
+  {{- else -}}
+    {{- required "Missing .Values.redisExternal.existingSecret" (tpl .Values.redisExternal.existingSecret .) -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+  Get the database password secret key
+*/}}
+{{- define "invenio.redis.secretKey" -}}
+  {{- if .Values.redis.enabled -}}
+    {{- required "Missing .Values.redis.auth.existingSecretPasswordKey" .Values.redis.auth.existingSecretPasswordKey -}}
+  {{- else -}}
+    {{- required "Missing .Values.redisExternal.existingSecretPasswordKey" .Values.redisExternal.existingSecretPasswordKey -}}
+  {{- end }}
+{{- end }}
+
+{{/*
+  This template renders the port number for Redis.
+*/}}
+{{- define "invenio.redis.port" -}}
+  {{- if .Values.redis.enabled }}
+    {{- print "6379" | quote -}}
+  {{- else }}
+    {{- default "6379" .Values.redisExternal.port | quote -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  This template renders the protocol for Redis 
+*/}}
+{{- define "invenio.redis.protocol" -}}
+  {{- if .Values.redis.enabled }}
+    {{- print "redis" -}}
+  {{- else }}
+    {{- default "redis" .Values.redisExternal.redisProtocol -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  Redis connection env section.
+*/}}
+{{- define "invenio.config.cache" -}}
+{{- $uri := "$(INVENIO_CONFIG_REDIS_PROTOCOL)://:$(INVENIO_CONFIG_REDIS_PASSWORD)@$(INVENIO_CONFIG_REDIS_HOST):$(INVENIO_CONFIG_REDIS_PORT)" -}}
+{{- $hostString := ":$(INVENIO_CONFIG_REDIS_PASSWORD)@$(INVENIO_CONFIG_REDIS_HOST)" -}}
+- name: INVENIO_CONFIG_REDIS_HOST
+  value: {{ include "invenio.redis.hostname" . }}
+- name: INVENIO_CONFIG_REDIS_PORT
+  value: {{ include "invenio.redis.port" . }}
+- name: INVENIO_CONFIG_REDIS_PROTOCOL
+  value: {{ include "invenio.redis.protocol" . }}
+- name: INVENIO_CONFIG_REDIS_PASSWORD
+{{- if and .Values.redis.enabled (not .Values.redis.auth.enabled) }}
+  value: {{ print "\"\"" }}  
+{{- else if or (and .Values.redis.enabled .Values.redis.auth.password) .Values.redisExternal.password }}
+  value: {{ include "invenio.redis.password" .  | quote }}
+{{- else }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "invenio.redis.secretName" .}}
+      key: {{ include "invenio.redis.secretKey" .}}
+{{- end }}
+- name: INVENIO_CACHE_REDIS_HOST
+  value: {{ $hostString }}
+- name: INVENIO_CACHE_REDIS_URL
+  value: {{ printf "%s/0" $uri }}
+- name: INVENIO_IIIF_CACHE_REDIS_URL
+  value: {{ printf "%s/0" $uri }}
+- name: INVENIO_ACCOUNTS_SESSION_REDIS_URL
+  value: {{ printf "%s/1" $uri }}
+- name: INVENIO_CELERY_RESULT_BACKEND
+  value: {{ printf "%s/2" $uri }}
+- name: INVENIO_RATELIMIT_STORAGE_URI
+  value: {{ printf "%s/3" $uri }}
+- name: INVENIO_COMMUNITIES_IDENTITIES_CACHE_REDIS_URL
+  value: {{ printf "%s/4" $uri }}
+{{- end }}
+
+
+
 #######################     Ingress TLS secret name     #######################
 {{/*
   This template renders the name of the TLS secret used in
@@ -249,11 +345,157 @@ Return the proper Invenio image name
 */}}
 {{- define "invenio.opensearch.hostname" -}}
   {{- if .Values.opensearch.enabled }}
-    {{- include "opensearch.service.name" .Subcharts.opensearch -}}
+    {{- $hostname := (include "opensearch.service.name" .Subcharts.opensearch) | trim  -}}
+    {{- printf "%q" (printf "[{\"host\": \"$hostname\"}]") -}}
   {{- else }}
-    {{- required "Missing .Values.opensearchExternal.hostname" .Values.opensearchExternal.hostname -}}
+    {{- $hostname := (required "Missing .Values.opensearchExternal.hostname" .Values.opensearchExternal.hostname) -}}
+    {{- printf "%q" (printf "[{\"host\": \"%s\"}]" $hostname) -}}
   {{- end }}
 {{- end -}}
+
+{{/*
+  This template renders the username for accessing opensearch 
+*/}}
+{{- define "invenio.opensearch.username" -}}
+  {{- if and .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- required "Missing .Values.opensearchExternal.username" .Values.opensearchExternal.username -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  This template renders the password for accessing opensearch 
+*/}}
+{{- define "invenio.opensearch.password" -}}
+  {{- if and .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- required "Missing .Values.opensearchExternal.password" .Values.opensearchExternal.password -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  Get the opensearch password secret name
+*/}}
+{{- define "invenio.opensearch.secretName" -}}
+  {{- if .Values.opensearch.enabled -}}
+    {{- "" -}}
+  {{- else -}}
+    {{- required "Missing .Values.opensearchExternal.existingSecret" (tpl .Values.opensearchExternal.existingSecret .) -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+  Get the opensearch password secret key
+*/}}
+{{- define "invenio.opensearch.secretKey" -}}
+  {{- if .Values.opensearch.enabled -}}
+    {{- "" -}}
+  {{- else -}}
+    {{- required "Missing .Values.opensearchExternal.existingSecretPasswordKey" .Values.opensearchExternal.existingSecretPasswordKey -}}
+  {{- end }}
+{{- end }}
+
+{{/*
+  This template renders the useSsl for opensearch
+*/}}
+{{- define "invenio.opensearch.useSsl" -}}
+  {{- if .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- default "False" .Values.opensearchExternal.useSsl -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  This template renders the verifyCerts for opensearch
+*/}}
+{{- define "invenio.opensearch.verifyCerts" -}}
+  {{- if .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- default "False" .Values.opensearchExternal.verifyCerts -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  This template renders the caCerts for opensearch
+*/}}
+{{- define "invenio.opensearch.caCerts" -}}
+  {{- if .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- if (eq .Values.opensearchExternal.verifyCerts "True")  }}
+      {{- required "Missing .Values.opensearchExternal.caCerts" .Values.opensearchExternal.caCerts -}}
+    {{- else }}
+      {{- print "" }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  This template renders the sslAssertHostname for opensearch
+*/}}
+{{- define "invenio.opensearch.sslAssertHostname" -}}
+  {{- if .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- default "False" .Values.opensearchExternal.sslAssertHostname -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  This template renders the sslShowWarn for opensearch
+*/}}
+{{- define "invenio.opensearch.sslShowWarn" -}}
+  {{- if .Values.opensearch.enabled }}
+    {{- "" -}}
+  {{- else }}
+    {{- default "False" .Values.opensearchExternal.sslShowWarn -}}
+  {{- end }}
+{{- end -}}
+
+{{/*
+  Opensearch connection env section.
+*/}}
+{{- define "invenio.config.opensearch" -}}
+{{- if .Values.opensearch.enabled }}
+- name: INVENIO_SEARCH_HOSTS
+  value: {{ (include "invenio.opensearch.hostname" . | trim) }}
+{{- else }}
+{{- if and (hasKey .Values.opensearchExternal "authEnabled") (not (kindIs "bool" .Values.opensearchExternal.authEnabled)) }}
+{{- fail ".Values.opensearchExternal.authEnabled must be a boolean" }}
+{{- end }}
+- name: INVENIO_SEARCH_HOSTS
+  value: {{ (include "invenio.opensearch.hostname" . | trim) }}
+{{- if .Values.opensearchExternal.authEnabled }}
+- name: "INVENIO_CONFIG_OPENSEARCH_USER"
+  value: {{ printf "%q" (include "invenio.opensearch.username" . | trim) }}
+- name: "INVENIO_CONFIG_OPENSEARCH_USE_SSL"
+  value: {{ printf "%q" (include "invenio.opensearch.useSsl" . | trim) }}
+- name: "INVENIO_CONFIG_OPENSEARCH_VERIFY_CERTS"
+  value: {{ printf "%q" (include "invenio.opensearch.verifyCerts" . | trim) }}
+- name: "INVENIO_CONFIG_OPENSEARCH_SSL_ASSERT_HOSTNAME"
+  value: {{ printf "%q" (include "invenio.opensearch.sslAssertHostname" . | trim) }}
+- name: "INVENIO_CONFIG_OPENSEARCH_SSL_SHOW_WARN"
+  value: {{ printf "%q" (include "invenio.opensearch.sslShowWarn" . | trim) }}
+- name: "INVENIO_CONFIG_OPENSEARCH_CA_CERTS"
+  value: {{ printf "%q" (include "invenio.opensearch.caCerts" . | trim) }}
+- name: "INVENIO_CONFIG_OPENSEARCH_PASSWORD"
+{{- if .Values.opensearchExternal.password }}
+  value: {{ printf "%q" (include "invenio.opensearch.password" . | trim) }}
+{{- else }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "invenio.opensearch.secretName" . | trim }}
+      key:  {{ include "invenio.opensearch.secretKey" . | trim }}
+{{- end }}
+- name: INVENIO_SEARCH_CLIENT_CONFIG
+  value: {{ printf "%q" (printf "{\"use_ssl\": $(INVENIO_CONFIG_OPENSEARCH_USE_SSL), \"verify_certs\": $(INVENIO_CONFIG_OPENSEARCH_VERIFY_CERTS), \"ssl_assert_hostname\": $(INVENIO_CONFIG_OPENSEARCH_SSL_ASSERT_HOSTNAME), \"ssl_show_warn\": $(INVENIO_CONFIG_OPENSEARCH_SSL_SHOW_WARN), \"ca_certs\": \"$(INVENIO_CONFIG_OPENSEARCH_CA_CERTS)\", \"http_auth\": [\"$(INVENIO_CONFIG_OPENSEARCH_USER)\", \"$(INVENIO_CONFIG_OPENSEARCH_PASSWORD)\"]}") }}
+{{- end }}
+{{- end }}
+{{- end }}
 
 #########################     PostgreSQL connection configuration     #########################
 {{/*
@@ -361,6 +603,15 @@ Return the proper Invenio image name
   value: "$(INVENIO_DB_PROTOCOL)://$(INVENIO_DB_USER):$(INVENIO_DB_PASSWORD)@$(INVENIO_DB_HOST):$(INVENIO_DB_PORT)/$(INVENIO_DB_NAME)"
 {{- end -}}
 
+{{- define "invenio.config.extraSecrets" }}
+- name: extra-secrets 
+  projected:
+    sources:
+      {{- with .Values.invenio.extraSecrets }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}
+
 {{/*
 Get the sentry secret name
 */}}
@@ -391,16 +642,8 @@ Add sentry environmental variables
 Invenio basic configuration variables
 */}}
 {{- define "invenio.configBase" -}}
-INVENIO_ACCOUNTS_SESSION_REDIS_URL: 'redis://{{ include "invenio.redis.hostname" . }}:6379/1'
 INVENIO_APP_ALLOWED_HOSTS: '["{{ include "invenio.hostname" $ }}"]'
 INVENIO_TRUSTED_HOSTS: '["{{ include "invenio.hostname" $ }}"]'
-INVENIO_CACHE_REDIS_HOST: '{{ include "invenio.redis.hostname" . }}'
-INVENIO_CACHE_REDIS_URL: 'redis://{{ include "invenio.redis.hostname" . }}:6379/0'
-INVENIO_CELERY_RESULT_BACKEND: 'redis://{{ include "invenio.redis.hostname" . }}:6379/2'
-INVENIO_IIIF_CACHE_REDIS_URL: 'redis://{{ include "invenio.redis.hostname" . }}:6379/0'
-INVENIO_RATELIMIT_STORAGE_URI: 'redis://{{ include "invenio.redis.hostname" . }}:6379/3'
-INVENIO_COMMUNITIES_IDENTITIES_CACHE_REDIS_URL: 'redis://{{ include "invenio.redis.hostname" . }}:6379/4'
-INVENIO_SEARCH_HOSTS: {{ printf "[{'host': '%s'}]" (include "invenio.opensearch.hostname" .) | quote }}
 INVENIO_SITE_HOSTNAME: '{{ include "invenio.hostname" $ }}'
 INVENIO_SITE_UI_URL: 'https://{{ include "invenio.hostname" $ }}'
 INVENIO_SITE_API_URL: 'https://{{ include "invenio.hostname" $ }}/api'

@@ -41,6 +41,7 @@ spec:
           {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
         app.kubernetes.io/component: web
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds }}
       {{- with .Values.web.nodeSelector }}
@@ -75,8 +76,10 @@ spec:
         env:
         - name: TZ
           value: {{ required "Missing .Values.global.timezone" .Values.global.timezone }}
-        {{- include "invenio.config.queue" . | nindent 8 }}
-        {{- include "invenio.config.database" . | nindent 8 }}
+        {{- include "invenio.config.queue" . | trim | nindent 8 }}
+        {{- include "invenio.config.database" . | trim | nindent 8 }}
+        {{- include "invenio.config.cache" . | trim | nindent 8 }}
+        {{- include "invenio.config.opensearch" . | trim | nindent 8 }}
         {{- with .Values.invenio.extraEnvVars }}
         {{-  toYaml . | nindent 8 }}
         {{- end }}
@@ -129,6 +132,10 @@ spec:
           {{- range .Values.web.extraVolumeMounts }}
           - {{ toYaml . | nindent 12 }}
           {{- end }}
+          {{- if .Values.invenio.extraSecrets }}
+          - name: extra-secrets
+            mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
+          {{- end }}
         securityContext:
           {{- with .Values.web.securityContext }}
           {{- toYaml . | nindent 10 }}
@@ -153,6 +160,10 @@ spec:
         - name: nginx-invenio-assets
           mountPath: "{{ .Values.nginx.assets.location }}"
           readOnly: true
+        {{- if .Values.invenio.extraSecrets }}
+        - name: extra-secrets
+          mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /ping
@@ -269,6 +280,9 @@ spec:
           name: {{ include "invenio.fullname" . }}-uwsgi-config
       - name: nginx-invenio-assets
         emptyDir: {}
+      {{- if .Values.invenio.extraSecrets }} 
+      {{- include "invenio.config.extraSecrets" . | trim | nindent 6 }}
+      {{- end }}
       {{- if .Values.persistence.enabled }}
       - name: shared-volume
         persistentVolumeClaim:

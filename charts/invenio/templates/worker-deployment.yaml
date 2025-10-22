@@ -39,6 +39,7 @@ spec:
           {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
         app.kubernetes.io/component: worker
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       {{- with .Values.worker.nodeSelector }}
       nodeSelector:
@@ -78,6 +79,8 @@ spec:
             value: {{ required "Missing .Values.global.timezone" .Values.global.timezone }}
           {{- include "invenio.config.queue" . | nindent 10 }}
           {{- include "invenio.config.database" . | nindent 10 }}
+          {{- include "invenio.config.cache" . | nindent 10 }}
+          {{- include "invenio.config.opensearch" . | trim | nindent 10 }}
           {{- with .Values.invenio.extraEnvVars }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -120,6 +123,10 @@ spec:
               mountPath: "/opt/invenio/var/instance/app_data/vocabularies/{{ $key }}"
               subPath: "{{ $key }}"
             {{- end }}
+            {{- if .Values.invenio.extraSecrets }}
+            - name: extra-secrets
+              mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
+            {{- end }}
         {{- if .Values.kerberos.enabled }}
         - name: kerberos-credentials
           image: {{ required "Missing .Values.kerberos.image" .Values.kerberos.image }}
@@ -158,6 +165,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       volumes:
+        {{- if .Values.invenio.extraSecrets }}
+        {{- include "invenio.config.extraSecrets" . | trim | nindent 8 }}
+        {{- end }}
         {{- if .Values.persistence.enabled }}
         - name: shared-volume
           persistentVolumeClaim:

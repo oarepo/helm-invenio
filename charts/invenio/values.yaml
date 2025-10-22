@@ -205,6 +205,18 @@ invenio:
     #     name: foo
     # - configMapRef:
     #     name: bar
+  ## @param invenio.extraSecrets Extra secrets mounted as projected volume by default into `/extra-secrets` or invenio.extraSecretsMountPath
+  ##
+  extraSecrets: [] 
+  # - secret:
+  #     name: anysecretname 
+  #     items:
+  #     - key: anykey 
+  #       path: anypath
+  ## @param invenio.extraSecretsMountPath You can change mountpoint for invenio.extraSecrets here. It defaults to `/extra-secrets`
+  ##
+  # extraSecretsMountPath: /any/great/path
+
 
   ## @param invenio.vocabularies Vocabularies to be loaded as files under /app_data/vocabularies
   ## Example
@@ -890,8 +902,13 @@ redis:
   enabled: true
   auth:
     ## @param redis.auth.enabled Enable password authentication
+    ## @extra redis.auth.existingSecret Name of an existing secret resource containing the credentials
+    ## @extra redis.auth.existingSecretPasswordKey Name of an existing secret key containing the credentials
     ##
     enabled: false  # Dangerous! This lets Invenio connect to Redis unauthenticated!
+    password: ""
+    # existingSecret:
+    # existingSecretPasswordKey:
   master:
     ## @param redis.master.disableCommands
     disableCommands: []  # Dangerous! This lets us run the `FLUSHALL` and `FLUSHDB` commands! Unfortunately, they are required by the wipe_recreate.sh script when installing Invenio.
@@ -899,14 +916,22 @@ redis:
     ## @param redis.replica.disableCommands
     disableCommands: []  # Dangerous! This lets us run the `FLUSHALL` and `FLUSHDB` commands! Unfortunately, they are required by the wipe_recreate.sh script when installing Invenio.
 
-
 ## @param redisExternal External redis configuration
 ## All of these values are only used when redis.enabled is set to false
+## @extra redisExternal.password Password
 ## @extra redisExternal.hostname
+## @extra redisExternal.existingSecret Name of an existing secret resource containing the credentials
+## @extra redisExternal.existingSecretPasswordKey Name of an existing secret key containing the credentials
+## @extra redisExternal.port defaults to 6379
+## @extra redisExternal.redisProtocol defaults to redis
+##
 redisExternal: {}
-  # hostname: ""
+  # hostname:
+  # password:
+  # existingSecret:
+  # existingSecretPasswordKey:
 
-## @section RabbitMQ chart configuration
+## RabbitMQ chart configuration
 ## ref: https://github.com/bitnami/charts/blob/main/bitnami/rabbitmq/values.yaml
 ##
 rabbitmq:
@@ -1074,7 +1099,31 @@ opensearch:
 
 ## @param externalOpensearch External Opensearch configuration
 ## All of these values are only used when opensearch.enabled is set to false
-externalOpensearch: {}
+## All boolean values must be quoted. Invenio is case-sensitive and only accepts "True" and "False"
+## @extra opensearchExternal.authEnabled if True authentification env INVENIO_SEARCH_CLIENT_CONFIG is rendered
+## @extra opensearchExternal.hostname Database host
+## @extra opensearchExternal.username username for Invenio
+## @extra opensearchExternal.password Password for the non-root username for Invenio
+## @extra opensearchExternal.existingSecret Name of an existing secret resource containing the database credentials
+## @extra opensearchExternal.existingSecretPasswordKey Key in the existing secret that contains the database password 
+## @extra opensearchExternal.useSsl (default: False)  
+## @extra opensearchExternal.verifyCerts if True caCerts must be provided (default: False)
+## @extra opensearchExternal.sslAssertHostname (default: False)
+## @extra opensearchExternal.sslShowWarn Show SSL warnings if enabled (default: False)
+## @extra opensearchExternal.caCerts CA certtificate for cert verification
+##
+opensearchExternal: {}
+  # hostname: ""
+  # authEnabled: False
+  # username: invenio
+  # password: "" 
+  # existingSecret: 
+  # existingSecretPasswordKey: ""
+  # useSsl: "True"
+  # verifyCerts: "False"
+  # sslAssertHostname: "False"
+  # sslShowWarn: "False"
+  # caCerts: "/extra-secrets/ca.crt"
 
 ## @secion Logstash configuration
 ## TODO: review content and possibly remove
