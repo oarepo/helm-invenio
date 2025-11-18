@@ -123,6 +123,9 @@ spec:
               mountPath: "/opt/invenio/var/instance/app_data/vocabularies/{{ $key }}"
               subPath: "{{ $key }}"
             {{- end }}
+            - name: load-config
+              mountPath: /configs
+              readOnly: true
             {{- if .Values.invenio.extraSecrets }}
             - name: extra-secrets
               mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
@@ -165,6 +168,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       volumes:
+        - name: load-config
+          emptyDir:
+            sizeLimit: 50Mi
         {{- if .Values.invenio.extraSecrets }}
         {{- include "invenio.config.extraSecrets" . | trim | nindent 8 }}
         {{- end }}

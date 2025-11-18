@@ -108,6 +108,9 @@ spec:
         readinessProbe: {{- tpl (.Values.web.readinessProbe | toYaml) $ | nindent 10 }}
         startupProbe: {{- tpl (.Values.web.startupProbe | toYaml) $ | nindent 10 }}
         volumeMounts:
+          - name: load-config
+            mountPath: /configs
+            readOnly: true
           - name: uwsgi-config
             mountPath: '/opt/invenio/src/uwsgi'
           - name: nginx-invenio-assets
@@ -280,6 +283,9 @@ spec:
           name: {{ include "invenio.fullname" . }}-uwsgi-config
       - name: nginx-invenio-assets
         emptyDir: {}
+      - name: load-config
+        emptyDir:
+          sizeLimit: 50Mi
       {{- if .Values.invenio.extraSecrets }} 
       {{- include "invenio.config.extraSecrets" . | trim | nindent 6 }}
       {{- end }}
