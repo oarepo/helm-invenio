@@ -300,6 +300,10 @@ nginx:
     capabilities:
       drop:
         - ALL
+
+  uwsgiBufferSize: 16k
+  # double uwsgiBufferSize
+  uwsgiBusyBufferSize: 32k
 ## @section Web
 ##
 web:
