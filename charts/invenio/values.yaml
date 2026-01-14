@@ -197,7 +197,11 @@ invenio:
   extraEnvVars: []
   ## @param invenio.uwsgiExtraConfig Extra configuration variables (key: value) to be added to the uWSGI configuration file.
   ##
-  uwsgiExtraConfig: {}
+  uwsgiExtraConfig:
+    max-requests: "40000"
+    max-requests-delta: "5000"
+    listen: "4000"
+
   ## @param invenio.extraEnvFrom Extra secretRef or configMapRef for the `envFrom` field in all Invenio containers (templated).
   ##
   extraEnvFrom: []
