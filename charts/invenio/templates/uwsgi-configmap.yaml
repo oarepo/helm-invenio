@@ -9,7 +9,7 @@ data:
   uwsgi.ini: |
     [uwsgi]
     socket = 0.0.0.0:5000
-    module = invenio_app.wsgi:application
+    module = common.wsgi:application
     stats = /tmp/stats.socket
 
     master = true
