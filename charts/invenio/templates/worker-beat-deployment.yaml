@@ -88,6 +88,12 @@ spec:
         - name: extra-secrets
           mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
         {{- end }}
+        {{- with .Values.invenio.extraVolumeMounts }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
+        {{- with .Values.workerBeat.extraVolumeMounts }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "invenio.fullname" . }}-config
@@ -148,6 +154,12 @@ spec:
       - name: vocabularies
         configMap:
           name: "{{ include "invenio.fullname" . }}-vocabularies"
+      {{- end }}
+      {{- with .Values.invenio.extraVolumes }}
+      {{- tpl (toYaml .) $ | nindent 6 }}
+      {{- end }}
+      {{- with .Values.worker.extraVolumes }}
+      {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
       {{- if .Values.worker.imagePullSecret }}
       imagePullSecrets:

@@ -137,6 +137,12 @@ spec:
             - name: extra-secrets
               mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
             {{- end }}
+            {{- with .Values.invenio.extraVolumeMounts }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+            {{- with .Values.worker.extraVolumeMounts }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
         {{- if .Values.kerberos.enabled }}
         - name: kerberos-credentials
           image: {{ required "Missing .Values.kerberos.image" .Values.kerberos.image }}
@@ -194,6 +200,12 @@ spec:
         - name: vocabularies
           configMap:
             name: "{{ include "invenio.fullname" . }}-vocabularies"
+        {{- end }}
+        {{- with .Values.invenio.extraVolumes }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
+        {{- with .Values.worker.extraVolumes }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
       {{- if .Values.worker.imagePullSecret }}
       imagePullSecrets:
