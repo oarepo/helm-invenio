@@ -86,10 +86,6 @@ spec:
         - name: load-config
           mountPath: /configs
           readOnly: true
-        {{- if .Values.invenio.extraSecrets }}
-        - name: extra-secrets
-          mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
-        {{- end }}
         {{- include "invenio.opensearch.volumeMounts" . | nindent 8 }}
         {{- with .Values.invenio.extraVolumeMounts }}
         {{- tpl (toYaml .) $ | nindent 8 }}
@@ -142,9 +138,6 @@ spec:
       - name: load-config
         emptyDir:
           sizeLimit: 50Mi
-      {{- if .Values.invenio.extraSecrets }}
-      {{- include "invenio.config.extraSecrets" . | trim | nindent 6 }}
-      {{- end }}
       - name: var-run-celery
         emptyDir:
           medium: Memory

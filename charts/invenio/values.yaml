@@ -205,19 +205,6 @@ invenio:
     #     name: foo
     # - configMapRef:
     #     name: bar
-  ## @param invenio.extraSecrets Extra secrets mounted as projected volume by default into `/extra-secrets` or invenio.extraSecretsMountPath
-  ##
-  extraSecrets: []
-  # - secret:
-  #     name: anysecretname
-  #     items:
-  #     - key: anykey
-  #       path: anypath
-  ## @param invenio.extraSecretsMountPath You can change mountpoint for invenio.extraSecrets here. It defaults to `/extra-secrets`
-  ##
-  # extraSecretsMountPath: /any/great/path
-
-
   ## @param invenio.extraVolumeMounts Extra volumeMounts for all Invenio containers.
   ##
   extraVolumeMounts: []

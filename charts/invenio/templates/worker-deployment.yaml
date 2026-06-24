@@ -137,10 +137,6 @@ spec:
             - name: load-config
               mountPath: /configs
               readOnly: true
-            {{- if .Values.invenio.extraSecrets }}
-            - name: extra-secrets
-              mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
-            {{- end }}
             {{- include "invenio.opensearch.volumeMounts" . | nindent 12 }}
             {{- with .Values.invenio.extraVolumeMounts }}
             {{- tpl (toYaml .) $ | nindent 12 }}
@@ -189,9 +185,6 @@ spec:
         - name: load-config
           emptyDir:
             sizeLimit: 50Mi
-        {{- if .Values.invenio.extraSecrets }}
-        {{- include "invenio.config.extraSecrets" . | trim | nindent 8 }}
-        {{- end }}
         {{- if .Values.persistence.enabled }}
         - name: shared-volume
           persistentVolumeClaim:

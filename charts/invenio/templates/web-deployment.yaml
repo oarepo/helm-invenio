@@ -152,10 +152,6 @@ spec:
           {{- with .Values.web.extraVolumeMounts }}
           {{- tpl (toYaml .) $ | nindent 10 }}
           {{- end }}
-          {{- if .Values.invenio.extraSecrets }}
-          - name: extra-secrets
-            mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
-          {{- end }}
         securityContext:
           {{- with .Values.web.securityContext }}
           {{- toYaml . | nindent 10 }}
@@ -180,10 +176,6 @@ spec:
         - name: nginx-invenio-assets
           mountPath: "{{ .Values.nginx.assets.location }}"
           readOnly: true
-        {{- if .Values.invenio.extraSecrets }}
-        - name: extra-secrets
-          mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
-        {{- end }}
         readinessProbe:
           httpGet:
             path: /ping
@@ -276,9 +268,6 @@ spec:
       - name: load-config
         emptyDir:
           sizeLimit: 50Mi
-      {{- if .Values.invenio.extraSecrets }} 
-      {{- include "invenio.config.extraSecrets" . | trim | nindent 6 }}
-      {{- end }}
       {{- if .Values.persistence.enabled }}
       - name: shared-volume
         persistentVolumeClaim:

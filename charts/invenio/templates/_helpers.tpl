@@ -350,7 +350,7 @@ Return the proper Invenio image name
     {{- required "Missing .Values.opensearchExternal.hostname" .Values.opensearchExternal.hostname -}}
   {{- end }}
 {{- end -}}
-`
+
 #########################     SEARCH_HOSTS string     #########################
 {{/*
   This template renders the string value for the [INVENIO_]SEARCH_HOSTS environment variable.
@@ -535,15 +535,6 @@ Return the proper Invenio image name
 - name: INVENIO_SQLALCHEMY_DATABASE_URI
   value: "$(INVENIO_DB_PROTOCOL)://$(INVENIO_DB_USER):$(INVENIO_DB_PASSWORD)@$(INVENIO_DB_HOST):$(INVENIO_DB_PORT)/$(INVENIO_DB_NAME)"
 {{- end -}}
-
-{{- define "invenio.config.extraSecrets" }}
-- name: extra-secrets 
-  projected:
-    sources:
-      {{- with .Values.invenio.extraSecrets }}
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
-{{- end }}
 
 {{/*
 Get the sentry secret name
