@@ -86,7 +86,7 @@ spec:
         {{- include "invenio.config.queue" . | trim | nindent 8 }}
         {{- include "invenio.config.database" . | trim | nindent 8 }}
         {{- include "invenio.config.cache" . | trim | nindent 8 }}
-        {{- include "invenio.config.opensearch" . | trim | nindent 8 }}
+        {{- include "invenio.opensearch.env" . | nindent 8 }}
         {{- with .Values.invenio.extraEnvVars }}
         {{-  toYaml . | nindent 8 }}
         {{- end }}
@@ -145,6 +145,7 @@ spec:
             subPath: "{{ $key }}"
             {{- end }}
           {{- end }}
+          {{- include "invenio.opensearch.volumeMounts" . | nindent 10 }}
           {{- with .Values.invenio.extraVolumeMounts }}
           {{- tpl (toYaml .) $ | nindent 10 }}
           {{- end }}
@@ -194,27 +195,6 @@ spec:
           {{- with .Values.nginx.securityContext }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-      {{- if .Values.logstash.enabled }}
-      - name: filebeat
-        image: {{ required ".Values.logstash.filebeat_image" .Values.logstash.filebeat_image }}
-        args: [
-            "-c", "/etc/filebeat.yml",
-            "-e",
-        ]
-        resources: {{- toYaml .Values.logstash.filebeat_resources | nindent 10 }}
-        volumeMounts:
-        - name: config
-          mountPath: /etc/filebeat.yml
-          readOnly: true
-          subPath: filebeat.yml
-        - name: var-log-nginx
-          mountPath: /var/log/nginx
-          readOnly: true
-        securityContext:
-          {{- with .Values.logstash.securityContext }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
-      {{- end }}
       {{- if .Values.kerberos.enabled }}
       - name: kerberos-credentials
         image: {{ required "Missing .Values.kerberos.image" .Values.kerberos.image }}
@@ -277,12 +257,6 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       volumes:
-      {{- if .Values.logstash.enabled }}
-      - name: config
-        configMap:
-          defaultMode: 0600
-          name: filebeat-config
-      {{- end }}
       - name: nginx-config
         configMap:
           defaultMode: 420
@@ -319,6 +293,7 @@ spec:
         configMap:
           name: "{{ include "invenio.fullname" . }}-vocabularies"
       {{- end }}
+      {{- include "invenio.opensearch.volumes" . | nindent 6 }}
       {{- with .Values.invenio.extraVolumes }}
       {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}

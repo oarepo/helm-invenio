@@ -345,157 +345,90 @@ Return the proper Invenio image name
 */}}
 {{- define "invenio.opensearch.hostname" -}}
   {{- if .Values.opensearch.enabled }}
-    {{- $hostname := (include "opensearch.service.name" .Subcharts.opensearch) | trim  -}}
-    {{- printf "%q" (printf "[{\"host\": \"$hostname\"}]") -}}
+    {{- include "opensearch.service.name" .Subcharts.opensearch -}}
   {{- else }}
-    {{- $hostname := (required "Missing .Values.opensearchExternal.hostname" .Values.opensearchExternal.hostname) -}}
-    {{- printf "%q" (printf "[{\"host\": \"%s\"}]" $hostname) -}}
+    {{- required "Missing .Values.opensearchExternal.hostname" .Values.opensearchExternal.hostname -}}
   {{- end }}
 {{- end -}}
-
+`
+#########################     SEARCH_HOSTS string     #########################
 {{/*
-  This template renders the username for accessing opensearch 
+  This template renders the string value for the [INVENIO_]SEARCH_HOSTS environment variable.
 */}}
-{{- define "invenio.opensearch.username" -}}
-  {{- if and .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- required "Missing .Values.opensearchExternal.username" .Values.opensearchExternal.username -}}
-  {{- end }}
-{{- end -}}
-
-{{/*
-  This template renders the password for accessing opensearch 
-*/}}
-{{- define "invenio.opensearch.password" -}}
-  {{- if and .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- required "Missing .Values.opensearchExternal.password" .Values.opensearchExternal.password -}}
-  {{- end }}
-{{- end -}}
-
-{{/*
-  Get the opensearch password secret name
-*/}}
-{{- define "invenio.opensearch.secretName" -}}
-  {{- if .Values.opensearch.enabled -}}
-    {{- "" -}}
-  {{- else -}}
-    {{- required "Missing .Values.opensearchExternal.existingSecret" (tpl .Values.opensearchExternal.existingSecret .) -}}
+{{- define "invenio.searchHostsString" -}}
+  {{- $params := list (printf "'host': '%s'" (include "invenio.opensearch.hostname" .)) -}}
+  {{- if not .Values.opensearch.enabled }}
+    {{- with $.Values.opensearchExternal -}}
+      {{- if (dig "auth" "enabled" false .) -}}
+        {{- $username := .auth.usernameEnv.name -}}
+        {{- $password := .auth.passwordEnv.name -}}
+        {{- $credentials := printf "'http_auth': ('$(%s)','$(%s)')" $username $password -}}
+        {{- $params = append $params $credentials -}}
+      {{- end -}}
+      {{- if (dig "encryption" "enabled" false .) -}}
+        {{- $params = append $params "'use_ssl': True" -}}
+        {{- $params = append $params (printf "'ca_certs': '%s/ca.crt'" .encryption.caCert.mountPath) -}}
+      {{- end -}}
+      {{- if .port -}}
+        {{- $params = append $params (printf "'port': '%v'" .port) -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
+  {{- printf "[{%s}]" (join "," $params) -}}
 {{- end -}}
 
+###################     Extra env for opensearchExternal     ###################
 {{/*
-  Get the opensearch password secret key
+  This template renders the extra environment variables for opensearchExternal
 */}}
-{{- define "invenio.opensearch.secretKey" -}}
-  {{- if .Values.opensearch.enabled -}}
-    {{- "" -}}
-  {{- else -}}
-    {{- required "Missing .Values.opensearchExternal.existingSecretPasswordKey" .Values.opensearchExternal.existingSecretPasswordKey -}}
-  {{- end }}
-{{- end }}
-
-{{/*
-  This template renders the useSsl for opensearch
-*/}}
-{{- define "invenio.opensearch.useSsl" -}}
-  {{- if .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- default "False" .Values.opensearchExternal.useSsl -}}
-  {{- end }}
+{{- define "invenio.opensearch.env" -}}
+  {{- $env := list -}}
+  {{- if not .Values.opensearch.enabled -}}
+    {{- with $.Values.opensearchExternal -}}
+      {{- if (dig "auth" "enabled" false .) -}}
+        {{- $env = append $env (required "Missing .Values.opensearchExternal.auth.usernameEnv" .auth.usernameEnv) -}}
+        {{- $env = append $env (required "Missing .Values.opensearchExternal.auth.passwordEnv" .auth.passwordEnv) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $hosts_string := (include "invenio.searchHostsString" .) -}}
+  {{- $search_hosts := dict "name" "INVENIO_SEARCH_HOSTS" "value" $hosts_string -}}
+  {{- append $env $search_hosts | toYaml -}}
 {{- end -}}
 
+##############     Extra volumeMounts for opensearchExternal     ##############
 {{/*
-  This template renders the verifyCerts for opensearch
+  This template renders the extra volumeMounts needed for opensearchExternal
 */}}
-{{- define "invenio.opensearch.verifyCerts" -}}
-  {{- if .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- default "False" .Values.opensearchExternal.verifyCerts -}}
-  {{- end }}
+{{- define "invenio.opensearch.volumeMounts" -}}
+{{- if not .Values.opensearch.enabled -}}
+{{- with $.Values.opensearchExternal.encryption -}}
+{{- if .enabled -}}
+- name: opensearch-ca
+  mountPath: {{ required "Missing .Values.opensearchExternal.encryption.caCert.mountPath" .caCert.mountPath }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
+#################     Extra volumes for opensearchExternal     #################
 {{/*
-  This template renders the caCerts for opensearch
+  This template renders the extra volumes needed for opensearchExternal
 */}}
-{{- define "invenio.opensearch.caCerts" -}}
-  {{- if .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- if (eq .Values.opensearchExternal.verifyCerts "True")  }}
-      {{- required "Missing .Values.opensearchExternal.caCerts" .Values.opensearchExternal.caCerts -}}
-    {{- else }}
-      {{- print "" }}
-    {{- end }}
-  {{- end }}
+{{- define "invenio.opensearch.volumes" -}}
+{{- if not .Values.opensearch.enabled -}}
+{{- with $.Values.opensearchExternal.encryption -}}
+{{- if .enabled -}}
+- name: opensearch-ca
+  secret:
+    secretName: {{ required "Missing .Values.opensearchExternal.encryption.caCert.secretName" .caCert.secretName }}
+    items:
+      - key: {{ required "Missing .Values.opensearchExternal.encryption.caCert.secretName" .caCert.secretKey }}
+        path: ca.crt
 {{- end -}}
-
-{{/*
-  This template renders the sslAssertHostname for opensearch
-*/}}
-{{- define "invenio.opensearch.sslAssertHostname" -}}
-  {{- if .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- default "False" .Values.opensearchExternal.sslAssertHostname -}}
-  {{- end }}
 {{- end -}}
-
-{{/*
-  This template renders the sslShowWarn for opensearch
-*/}}
-{{- define "invenio.opensearch.sslShowWarn" -}}
-  {{- if .Values.opensearch.enabled }}
-    {{- "" -}}
-  {{- else }}
-    {{- default "False" .Values.opensearchExternal.sslShowWarn -}}
-  {{- end }}
 {{- end -}}
-
-{{/*
-  Opensearch connection env section.
-*/}}
-{{- define "invenio.config.opensearch" -}}
-{{- if .Values.opensearch.enabled }}
-- name: INVENIO_SEARCH_HOSTS
-  value: {{ (include "invenio.opensearch.hostname" . | trim) }}
-{{- else }}
-{{- if and (hasKey .Values.opensearchExternal "authEnabled") (not (kindIs "bool" .Values.opensearchExternal.authEnabled)) }}
-{{- fail ".Values.opensearchExternal.authEnabled must be a boolean" }}
-{{- end }}
-- name: INVENIO_SEARCH_HOSTS
-  value: {{ (include "invenio.opensearch.hostname" . | trim) }}
-{{- if .Values.opensearchExternal.authEnabled }}
-- name: "INVENIO_CONFIG_OPENSEARCH_USER"
-  value: {{ printf "%q" (include "invenio.opensearch.username" . | trim) }}
-- name: "INVENIO_CONFIG_OPENSEARCH_USE_SSL"
-  value: {{ printf "%q" (include "invenio.opensearch.useSsl" . | trim) }}
-- name: "INVENIO_CONFIG_OPENSEARCH_VERIFY_CERTS"
-  value: {{ printf "%q" (include "invenio.opensearch.verifyCerts" . | trim) }}
-- name: "INVENIO_CONFIG_OPENSEARCH_SSL_ASSERT_HOSTNAME"
-  value: {{ printf "%q" (include "invenio.opensearch.sslAssertHostname" . | trim) }}
-- name: "INVENIO_CONFIG_OPENSEARCH_SSL_SHOW_WARN"
-  value: {{ printf "%q" (include "invenio.opensearch.sslShowWarn" . | trim) }}
-- name: "INVENIO_CONFIG_OPENSEARCH_CA_CERTS"
-  value: {{ printf "%q" (include "invenio.opensearch.caCerts" . | trim) }}
-- name: "INVENIO_CONFIG_OPENSEARCH_PASSWORD"
-{{- if .Values.opensearchExternal.password }}
-  value: {{ printf "%q" (include "invenio.opensearch.password" . | trim) }}
-{{- else }}
-  valueFrom:
-    secretKeyRef:
-      name: {{ include "invenio.opensearch.secretName" . | trim }}
-      key:  {{ include "invenio.opensearch.secretKey" . | trim }}
-{{- end }}
-- name: INVENIO_SEARCH_CLIENT_CONFIG
-  value: {{ printf "%q" (printf "{\"use_ssl\": $(INVENIO_CONFIG_OPENSEARCH_USE_SSL), \"verify_certs\": $(INVENIO_CONFIG_OPENSEARCH_VERIFY_CERTS), \"ssl_assert_hostname\": $(INVENIO_CONFIG_OPENSEARCH_SSL_ASSERT_HOSTNAME), \"ssl_show_warn\": $(INVENIO_CONFIG_OPENSEARCH_SSL_SHOW_WARN), \"ca_certs\": \"$(INVENIO_CONFIG_OPENSEARCH_CA_CERTS)\", \"http_auth\": [\"$(INVENIO_CONFIG_OPENSEARCH_USER)\", \"$(INVENIO_CONFIG_OPENSEARCH_PASSWORD)\"]}") }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{- end -}}
 
 #########################     PostgreSQL connection configuration     #########################
 {{/*
