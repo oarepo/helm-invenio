@@ -134,7 +134,7 @@ Return the proper Invenio image name
 {{/*
   Redis connection env section.
 */}}
-{{- define "invenio.config.cache" -}}
+{{- define "invenio.config.redis" -}}
 {{- if and (not .Values.redis.enabled) (not .Values.redisExternal) }}
   {{ fail "\n\nMissing Redis configuration.\nEnable Redis by setting `.Values.redis.enabled` to `true`, or configure `.Values.redisExternal`." }}
 {{- end }}
