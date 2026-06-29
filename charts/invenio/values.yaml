@@ -295,6 +295,11 @@ nginx:
     capabilities:
       drop:
         - ALL
+  ## @extra uwsgi buffer size, good for big header
+  uwsgiBufferSize: 32k
+  # for uwsgiBusyBufferSize double uwsgiBufferSize
+  uwsgiBusyBufferSize: 64k
+
 ## @section Web
 ##
 web:
