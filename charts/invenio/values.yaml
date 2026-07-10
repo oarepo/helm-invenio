@@ -280,6 +280,12 @@ nginx:
   ## @param nginx.extraServerConfig Extra configuration to be added to nginx.conf under the server section (templated).
   ##
   extraServerConfig: ""
+  ## @param nginx.extraVolumeMounts Extra volumeMounts for Nginx container.
+  ##
+  extraVolumeMounts: []
+  ## @param nginx.extraVolumes Extra volumes for all Invenio pods.
+  ##
+  extraVolumes: []
   ## @param nginx.denied_ips TODO:
   ##
   denied_ips: ""
