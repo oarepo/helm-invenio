@@ -179,6 +179,12 @@ spec:
         - name: nginx-invenio-assets
           mountPath: "{{ .Values.nginx.assets.location }}"
           readOnly: true
+        {{- with .Values.invenio.extraVolumeMounts }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
+        {{- with .Values.nginx.extraVolumeMounts }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
         {{- if .Values.invenio.extraSecrets }}
         - name: extra-secrets
           mountPath: {{ default "/extra-secrets" .Values.invenio.extraSecretsMountPath }}
