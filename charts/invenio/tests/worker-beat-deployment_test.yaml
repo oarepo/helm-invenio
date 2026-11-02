@@ -95,3 +95,39 @@ tests:
             name: MY_VAR
             value: my-value
         template: templates/worker-beat-deployment.yaml
+
+  - it: uses the default celery beat command when commandOverride is unset
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /bin/bash
+            - -c
+            - "celery -A invenio_app.celery beat -l INFO -s /var/run/celery/celery-schedule --pidfile /var/run/celery/celerybeat.pid"
+        template: templates/worker-beat-deployment.yaml
+
+  - it: uses commandOverride as the container command when set
+    set:
+      workerBeat.commandOverride: "celery -A invenio_app.celery worker --beat --loglevel=INFO"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /bin/bash
+            - -c
+            - "celery -A invenio_app.celery worker --beat --loglevel=INFO"
+        template: templates/worker-beat-deployment.yaml
+
+  - it: templates values referenced inside commandOverride
+    set:
+      worker.app: my_app.celery
+      worker.log_level: DEBUG
+      workerBeat.commandOverride: "celery -A {{ .Values.worker.app }} worker --beat --loglevel={{ .Values.worker.log_level }}"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /bin/bash
+            - -c
+            - "celery -A my_app.celery worker --beat --loglevel=DEBUG"
+        template: templates/worker-beat-deployment.yaml
