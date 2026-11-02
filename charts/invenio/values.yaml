@@ -1233,7 +1233,7 @@ redisExternal: {}
   # password:
   # existingSecret:
   # existingSecretPasswordKey:
-
+  # port: 6379
 ## @section RabbitMQ chart configuration
 ## ref: https://github.com/bitnami/charts/blob/main/bitnami/rabbitmq/values.yaml
 ##

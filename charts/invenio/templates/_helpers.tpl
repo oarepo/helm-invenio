@@ -121,7 +121,11 @@ Return the proper Invenio image name
   This template renders the port number for Redis.
 */}}
 {{- define "invenio.redis.port" -}}
+  {{- if .Values.redis.enabled }}
     {{- print "6379" | quote -}}
+  {{- else }}
+    {{- default 6379 .Values.redisExternal.port | quote }}
+  {{- end }}
 {{- end -}}
 
 {{/*
