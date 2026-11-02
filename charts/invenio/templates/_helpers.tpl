@@ -132,7 +132,11 @@ Return the proper Invenio image name
   This template renders the protocol for Redis
 */}}
 {{- define "invenio.redis.protocol" -}}
-  {{- print "redis" -}}
+  {{- if .Values.redis.enabled }}
+    {{- print "redis" -}}
+  {{- else }}
+    {{- default "redis" .Values.redisExternal.redisProtocol }}
+  {{- end }}
 {{- end -}}
 
 {{/*
