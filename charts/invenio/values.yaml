@@ -721,6 +721,123 @@ worker:
       ##
       strategy: null
 
+## Low-priority worker (Celery) configuration
+## An optional second worker Deployment that consumes the `low` queue in addition to `celery`.
+## The main `worker` Deployment only consumes the default `celery` queue.
+##
+workerLow:
+  ## @param workerLow.enabled Deploy the low-priority worker.
+  ##
+  enabled: false
+  ## @param workerLow.queues Comma-separated Celery queues the low-priority worker consumes from.
+  ##
+  queues: celery,low
+  ## @param workerLow.concurrency Number of concurrent tasks to run per worker.
+  ##
+  concurrency: 2
+  ## @param workerLow.log_level Celery app log level.
+  ##
+  log_level: INFO
+  ## @param workerLow.replicas Number of low-priority worker replicas to deploy.
+  ##
+  replicas: 1
+  ## @param workerLow.extraEnvVars Extra environment variables to be added to the pods.
+  ##
+  extraEnvVars: []
+  ## @param workerLow.resources `resources` for the low-priority worker container
+  ##
+  resources: {}
+  ## @extra workerLow.podSecurityContext securityContext for the low-priority worker Pod
+  ## @param workerLow.podSecurityContext.runAsNonRoot TODO:
+  ## @param workerLow.podSecurityContext.runAsUser TODO:
+  ## @param workerLow.podSecurityContext.runAsGroup TODO:
+  ## @param workerLow.podSecurityContext.seccompProfile.type TODO:
+  ##
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: "RuntimeDefault"
+  ## @extra workerLow.securityContext securityContext for the low-priority worker container
+  ## @param workerLow.securityContext.allowPrivilegeEscalation set container's security context allowprivilegeescalation
+  ## @param workerLow.securityContext.capabilities.drop list of capabilities to be dropped
+  ##
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  ## @param workerLow.extraEnvFrom Extra secretRef or configMapRef for the `envFrom` field in the low-priority worker container (templated).
+  ##
+  extraEnvFrom: []
+  ## @param workerLow.extraVolumeMounts Extra volumeMounts for the low-priority worker container.
+  ##
+  extraVolumeMounts: []
+  ## @param workerLow.extraVolumes Extra volumes for the low-priority worker Pod.
+  ##
+  extraVolumes: []
+  ## @param workerLow.podLabels Add extra labels to the low-priority worker pods
+  ##
+  podLabels: {}
+  ## @param workerLow.podAnnotations Add extra annotations to the low-priority worker pods
+  ##
+  podAnnotations: {}
+  ## @param workerLow.affinity Affinity rules for low-priority worker pods assignment
+  ##
+  affinity: {}
+  ## @param workerLow.nodeSelector Node labels for low-priority worker pods assignment
+  ##
+  nodeSelector: {}
+  ## @param workerLow.tolerations Tolerations for low-priority worker pods assignment
+  ##
+  tolerations: []
+  ## @extra workerLow.livenessProbe templated `livenessProbe` for the low-priority worker container
+  ## @param workerLow.livenessProbe.exec.command TODO:
+  ## @param workerLow.livenessProbe.initialDelaySeconds TODO:
+  ## @param workerLow.livenessProbe.timeoutSeconds TODO:
+  ##
+  livenessProbe:
+    exec:
+      command:
+        - /bin/bash
+        - -c
+        - "celery -A {{ .Values.worker.app }} inspect ping -d celery@$(hostname)"
+    initialDelaySeconds: 20
+    timeoutSeconds: 30
+  ## @param workerLow.readinessProbe templated `readinessProbe` for the low-priority worker container
+  ##
+  readinessProbe: null
+  ## @param workerLow.startupProbe templated `startupProbe` for the low-priority worker container
+  ##
+  startupProbe: null
+
+  deployment:
+    ## @param workerLow.deployment.annotations Extra annotations for the low-priority worker Deployment
+    ##
+    annotations: {}
+    ## @param workerLow.deployment.labels Extra labels for the low-priority worker Deployment
+    ##
+    labels: {}
+    ## @extra workerLow.deployment.spec Configuration for other configurable fields in the Deployment.spec.
+    ##
+    spec:
+      ## @param workerLow.deployment.spec.minReadySeconds See API spec for `Deployment.spec.minReadySeconds
+      ##
+      minReadySeconds: null
+      ## @param workerLow.deployment.spec.paused See API spec for `Deployment.spec.paused
+      ##
+      paused: null
+      ## @param workerLow.deployment.spec.progressDeadlineSeconds See API spec for `Deployment.spec.progressDeadlineSeconds
+      ##
+      progressDeadlineSeconds: null
+      ## @param workerLow.deployment.spec.revisionHistoryLimit See API spec for `Deployment.spec.revisionHistoryLimit
+      ##
+      revisionHistoryLimit: null
+      ## @param workerLow.deployment.spec.strategy See API spec for `Deployment.spec.strategy
+      ##
+      strategy: null
+
 workerBeat:
   ## @param workerBeat.extraEnvVars Extra environment variables to be added to the pods.
   ##
