@@ -571,6 +571,22 @@ worker:
   ## @param worker.replicas Number of web replicas to deploy.
   ##
   replicas: 2
+  ## @param worker.queues Celery queues the worker consumes from (list or comma-separated string). Empty means Celery's default (`celery`).
+  ## e.g. ["celery", "low"] renders `--queues celery,low`
+  ##
+  queues: []
+  ## @param worker.extraArgs Extra arguments appended to the `celery worker` command, e.g. ["--events"].
+  ##
+  extraArgs: []
+  ## @param worker.groups Additional worker Deployments, keyed by name. Each group inherits all `worker.*` values and overrides the top-level keys it sets (shallow merge, so e.g. `resources` is replaced as a whole). A group `low` renders the Deployment `<fullname>-worker-low` with component label `worker-low`.
+  ## e.g.
+  ## groups:
+  ##   low:
+  ##     queues: ["celery", "low"]
+  ##     replicas: 1
+  ##     concurrency: 1
+  ##
+  groups: {}
   ## @param worker.run_mount_path
   ##
   run_mount_path: /var/run/celery
